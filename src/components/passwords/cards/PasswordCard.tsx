@@ -12,7 +12,7 @@ import {
 import {Button} from "@/components/ui/button.tsx";
 import {CopyIcon, EyeIcon, EyeOffIcon, FolderIcon, FolderOutputIcon, MoreVerticalIcon, PencilIcon, TrashIcon} from "lucide-react";
 import type {PasswordItem} from "@/api/passwords/types.ts";
-import {type FC} from "react";
+import type {DragEvent, FC} from "react";
 import {PasswordVisibilityToggle} from "@/components/passwords/cards/PasswordVisibilityToggle.tsx";
 
 type FolderOption = {
@@ -45,7 +45,12 @@ export const PasswordCard: FC<Props> = ({
                                         }) => {
     const isVisiblePassword = revealedId === password.id;
 
-    return <Card key={password.id}>
+    const onDragStart = (e: DragEvent) => {
+        e.dataTransfer.setData("application/x-password-id", password.id);
+        e.dataTransfer.effectAllowed = "move";
+    };
+
+    return <Card key={password.id} draggable onDragStart={onDragStart} className="cursor-grab active:cursor-grabbing">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
                 <CardTitle className="text-base">

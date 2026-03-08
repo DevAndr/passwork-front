@@ -1,3 +1,4 @@
+import { type DragEvent, useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import {
     Sidebar,
@@ -14,7 +15,9 @@ import {
 import { useFolders } from "@/api/folders/useFolders";
 import { useTags } from "@/api/tags/useTags";
 import { useMe } from "@/api/auth/useMe";
+import { useUpdatePassword } from "@/api/passwords/useUpdatePassword";
 import { useAuthStore } from "@/stores/authStore";
+import { useQueryClient } from "@tanstack/react-query";
 import Logo from "@/components/Logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,14 +43,56 @@ export default function AppSidebar({ onCreateFolder, onCreateTag }: Props) {
     const { data: tags } = useTags();
     const { data: user } = useMe();
     const clearAuth = useAuthStore((s) => s.clearAuth);
+    const updatePassword = useUpdatePassword();
+    const queryClient = useQueryClient();
 
     const activeFolderId = searchParams.get("folderId");
     const activeTagId = searchParams.get("tagId");
+
+    const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
     const handleLogout = () => {
         clearAuth();
         navigate("/login", { replace: true });
     };
+
+    const hasPasswordData = (e: DragEvent) =>
+        e.dataTransfer.types.includes("application/x-password-id");
+
+    const handleDragOver = useCallback((e: DragEvent) => {
+        if (!hasPasswordData(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+    }, []);
+
+    const handleDragEnter = useCallback((folderId: string) => (e: DragEvent) => {
+        if (!hasPasswordData(e)) return;
+        e.preventDefault();
+        setDragOverFolderId(folderId);
+    }, []);
+
+    const handleDragLeave = useCallback((e: DragEvent) => {
+        if (!hasPasswordData(e)) return;
+        const related = e.relatedTarget as Node | null;
+        if (e.currentTarget.contains(related)) return;
+        setDragOverFolderId(null);
+    }, []);
+
+    const handleDrop = useCallback((folderId: string) => (e: DragEvent) => {
+        e.preventDefault();
+        setDragOverFolderId(null);
+        const passwordId = e.dataTransfer.getData("application/x-password-id");
+        if (!passwordId) return;
+        updatePassword.mutate(
+            { id: passwordId, folderId },
+            {
+                onSuccess: () => {
+                    queryClient.invalidateQueries({ queryKey: ["passwords"] });
+                    queryClient.invalidateQueries({ queryKey: ["folders"] });
+                },
+            },
+        );
+    }, [updatePassword, queryClient]);
 
     return (
         <Sidebar>
@@ -105,7 +150,18 @@ export default function AppSidebar({ onCreateFolder, onCreateTag }: Props) {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {folders?.map((folder) => (
-                                <SidebarMenuItem key={folder.id}>
+                                <SidebarMenuItem
+                                    key={folder.id}
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={handleDragEnter(folder.id)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop(folder.id)}
+                                    className={
+                                        dragOverFolderId === folder.id
+                                            ? "rounded-md ring-2 ring-primary"
+                                            : ""
+                                    }
+                                >
                                     <SidebarMenuButton
                                         onClick={() =>
                                             navigate(
