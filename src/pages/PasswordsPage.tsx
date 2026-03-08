@@ -1,4 +1,4 @@
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useSearchParams} from "react-router";
 import {usePasswords} from "@/api/passwords/usePasswords";
 import {useDeletePassword} from "@/api/passwords/useDeletePassword";
@@ -7,7 +7,8 @@ import {useImportCsv} from "@/api/passwords/useImportCsv";
 import {useFolders} from "@/api/folders/useFolders";
 import {useQueryClient} from "@tanstack/react-query";
 import {Button} from "@/components/ui/button";
-import {ImportIcon, PlusIcon} from "lucide-react";
+import {Input} from "@/components/ui/input";
+import {ImportIcon, PlusIcon, SearchIcon, XIcon} from "lucide-react";
 import {decrypt} from "@/lib/crypto";
 import {useAuthStore} from "@/stores/authStore";
 import PasswordDialog from "@/components/dialogs/PasswordDialog";
@@ -17,7 +18,19 @@ import {PasswordCard} from "@/components/passwords/cards/PasswordCard.tsx";
 export default function PasswordsPage() {
     const [searchParams] = useSearchParams();
     const folderId = searchParams.get("folderId") ?? undefined;
-    const {data: passwords, isLoading} = usePasswords({folderId});
+
+    const [searchInput, setSearchInput] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    const {data: passwords, isLoading} = usePasswords({
+        folderId,
+        search: debouncedSearch || undefined,
+    });
     const {data: folders} = useFolders();
     const deletePassword = useDeletePassword();
     const updatePassword = useUpdatePassword();
@@ -127,41 +140,68 @@ export default function PasswordsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Пароли</h1>
-                <div className="flex items-center gap-2">
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".csv"
-                        className="hidden"
-                        onChange={handleFileChange}
+            <div className='top-2 sticky bg-[#090909] rounded-2xl'>
+                <div className="flex items-center justify-between pb-2">
+                    <h1 className="text-2xl font-bold">Пароли {passwords?.length}</h1>
+                    <div className="flex items-center gap-2">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".csv"
+                            className="hidden"
+                            onChange={handleFileChange}
+                        />
+                        <Button
+                            variant="outline"
+                            onClick={handleImportCsv}
+                            disabled={importCsv.isPending}
+                        >
+                            <ImportIcon className="mr-2 size-4"/>
+                            {importCsv.isPending ? "Импорт..." : "Импорт CSV"}
+                        </Button>
+                        <Button onClick={handleCreate}>
+                            <PlusIcon className="mr-2 size-4"/>
+                            Добавить
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="relative">
+                    <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/>
+                    <Input
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        placeholder="Поиск паролей..."
+                        className="pl-9 pr-9"
                     />
-                    <Button
-                        variant="outline"
-                        onClick={handleImportCsv}
-                        disabled={importCsv.isPending}
-                    >
-                        <ImportIcon className="mr-2 size-4"/>
-                        {importCsv.isPending ? "Импорт..." : "Импорт CSV"}
-                    </Button>
-                    <Button onClick={handleCreate}>
-                        <PlusIcon className="mr-2 size-4"/>
-                        Добавить
-                    </Button>
+                    {searchInput && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchInput("")}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                            <XIcon className="size-4"/>
+                        </button>
+                    )}
                 </div>
             </div>
 
             {!passwords?.length ? (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <p>Нет сохранённых паролей</p>
-                    <Button
-                        variant="link"
-                        className="mt-2"
-                        onClick={handleCreate}
-                    >
-                        Добавить первый пароль
-                    </Button>
+                    {debouncedSearch ? (
+                        <p>Ничего не найдено по запросу &laquo;{debouncedSearch}&raquo;</p>
+                    ) : (
+                        <>
+                            <p>Нет сохранённых паролей</p>
+                            <Button
+                                variant="link"
+                                className="mt-2"
+                                onClick={handleCreate}
+                            >
+                                Добавить первый пароль
+                            </Button>
+                        </>
+                    )}
                 </div>
             ) : (
                 <div className="grid gap-3">

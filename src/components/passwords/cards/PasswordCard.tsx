@@ -59,8 +59,6 @@ export const PasswordCard: FC<Props> = ({
         e.dataTransfer.effectAllowed = "move";
     };
 
-    console.log(password)
-
     return <Card key={password.id} draggable onDragStart={onDragStart} className="cursor-grab active:cursor-grabbing">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
