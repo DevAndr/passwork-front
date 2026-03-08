@@ -7,7 +7,9 @@ type FolderItem = {
     name: string;
     parentId?: string;
     children: FolderItem[];
-    passwordCount: number;
+    _count: {
+        passwords: number
+    };
     createdAt: string;
     updatedAt: string;
 };

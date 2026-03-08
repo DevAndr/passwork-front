@@ -29,7 +29,7 @@ export default function LoginPage() {
                 onSuccess: (data) => {
                     localStorageUtil.set("accessToken", data.accessToken);
                     localStorageUtil.set("refreshToken", data.refreshToken);
-                    navigate("/");
+                    navigate("/unlock");
                 },
             },
         );

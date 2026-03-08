@@ -2,8 +2,10 @@
 import axios, { type AxiosRequestConfig } from "axios";
 import {localStorageUtil} from "../../utils/localStorage.ts";
 
+const baseURL = (import.meta.env.VITE_API_URL ?? "http://localhost:3030/api/");
+
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:3000",
+    baseURL,
     headers: { "Content-Type": "application/json" },
 });
 
@@ -17,11 +19,11 @@ axiosInstance.interceptors.request.use((config) => {
 });
 
 let isRefreshing = false;
-let failedQueue: { resolve: (token: string) => void; reject: (err: unknown) => void }[] = [];
+let failedQueue: { resolve: () => void; reject: (err: unknown) => void }[] = [];
 
-const processQueue = (error: unknown, token: string | null) => {
+const processQueue = (error: unknown) => {
     failedQueue.forEach(({ resolve, reject }) => {
-        if (token) resolve(token);
+        if (!error) resolve();
         else reject(error);
     });
     failedQueue = [];
@@ -43,7 +45,7 @@ axiosInstance.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        if (error.response?.status !== 401 || error.response?.status !== 403) {
+        if (error.response?.status !== 401) {
             return Promise.reject(error);
         }
 
@@ -61,10 +63,9 @@ axiosInstance.interceptors.response.use(
 
         // Если уже идёт refresh — ставим запрос в очередь
         if (isRefreshing) {
-            return new Promise<string>((resolve, reject) => {
+            return new Promise<void>((resolve, reject) => {
                 failedQueue.push({ resolve, reject });
-            }).then((token) => {
-                originalRequest.headers = { ...originalRequest.headers, Authorization: `Bearer ${token}` };
+            }).then(() => {
                 return axiosInstance(originalRequest);
             });
         }
@@ -74,19 +75,18 @@ axiosInstance.interceptors.response.use(
 
         try {
             const { data } = await axios.post(
-                `${axiosInstance.defaults.baseURL}/auth/refresh`,
+                `${baseURL}auth/refresh`,
                 { refreshToken },
             );
 
             localStorageUtil.set("accessToken", data.accessToken);
             localStorageUtil.set("refreshToken", data.refreshToken);
 
-            processQueue(null, data.accessToken);
+            processQueue(null);
 
-            originalRequest.headers = { ...originalRequest.headers, Authorization: `Bearer ${data.accessToken}` };
             return axiosInstance(originalRequest);
         } catch (refreshError) {
-            processQueue(refreshError, null);
+            processQueue(refreshError);
             redirectToLogin();
             return Promise.reject(refreshError);
         } finally {

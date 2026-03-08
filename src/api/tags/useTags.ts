@@ -6,7 +6,9 @@ type TagItem = {
     id: string;
     name: string;
     color?: string;
-    passwordCount: number;
+    _count: {
+        passwords: number
+    };
     createdAt: string;
     updatedAt: string;
 };
