@@ -53,15 +53,18 @@ export const PasswordCard: FC<Props> = ({
                                             handleMove,
                                         }) => {
     const isVisiblePassword = revealedId === password.id;
+    const tags = password.tags.map(tag => ({...tag.tag}))
 
     const onDragStart = (e: DragEvent) => {
         e.dataTransfer.setData("application/x-password-id", password.id);
         e.dataTransfer.effectAllowed = "move";
     };
 
+    console.log(password)
+
     return <Card key={password.id} draggable onDragStart={onDragStart} className="cursor-grab active:cursor-grabbing">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
+            <div className='min-w-0 wrap-break-word'>
                 <CardTitle className="text-base">
                     {password.title}
                 </CardTitle>
@@ -71,74 +74,77 @@ export const PasswordCard: FC<Props> = ({
                     </CardDescription>
                 )}
             </div>
-            <DropdownMenu>
-                <DropdownMenuTrigger>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8"
-                    >
-                        <MoreVerticalIcon className="size-4"/>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className='w-[180]'>
-                    <DropdownMenuItem
-                        onClick={() => handleEdit(password.id)}
-                    >
-                        <PencilIcon className="mr-2 size-4"/>
-                        Редактировать
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() =>
-                            handleCopy(
-                                password.encryptedPassword,
-                            )
-                        }
-                    >
-                        <CopyIcon className="mr-2 size-4"/>
-                        Копировать пароль
-                    </DropdownMenuItem>
-                    {folders && folders.length > 0 && (
-                        <>
-                            <DropdownMenuSeparator/>
-                            <DropdownMenuSub>
-                                <DropdownMenuSubTrigger>
-                                    <FolderOutputIcon className="mr-2 size-4"/>
-                                    Переместить
-                                </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent>
-                                    <DropdownMenuItem
-                                        onClick={() => handleMove(password.id, null)}
-                                        disabled={!password.folderId}
-                                    >
-                                        <FolderIcon className="mr-2 size-4"/>
-                                        Без папки
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator/>
-                                    {folders.map((folder) => (
+            <div className='flex gap-2'>
+                {tags.length > 0 && <div>{tags.map(tag => <div style={{color: tag.color}}>#{tag.name}</div>)}</div>}
+                <DropdownMenu>
+                    <DropdownMenuTrigger>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 cursor-pointer"
+                        >
+                            <MoreVerticalIcon className="size-4"/>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className='w-[180]'>
+                        <DropdownMenuItem
+                            onClick={() => handleEdit(password.id)}
+                        >
+                            <PencilIcon className="mr-2 size-4"/>
+                            Редактировать
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() =>
+                                handleCopy(
+                                    password.encryptedPassword,
+                                )
+                            }
+                        >
+                            <CopyIcon className="mr-2 size-4"/>
+                            Копировать пароль
+                        </DropdownMenuItem>
+                        {folders && folders.length > 0 && (
+                            <>
+                                <DropdownMenuSeparator/>
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                        <FolderOutputIcon className="mr-2 size-4"/>
+                                        Переместить
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
                                         <DropdownMenuItem
-                                            key={folder.id}
-                                            onClick={() => handleMove(password.id, folder.id)}
-                                            disabled={password.folderId === folder.id}
+                                            onClick={() => handleMove(password.id, null)}
+                                            disabled={!password.folderId}
                                         >
                                             <FolderIcon className="mr-2 size-4"/>
-                                            {folder.name}
+                                            Без папки
                                         </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-                        </>
-                    )}
-                    <DropdownMenuSeparator/>
-                    <DropdownMenuItem
-                        onClick={() => handleDelete(password.id)}
-                        className="text-destructive"
-                    >
-                        <TrashIcon className="mr-2 size-4"/>
-                        Удалить
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                                        <DropdownMenuSeparator/>
+                                        {folders.map((folder) => (
+                                            <DropdownMenuItem
+                                                key={folder.id}
+                                                onClick={() => handleMove(password.id, folder.id)}
+                                                disabled={password.folderId === folder.id}
+                                            >
+                                                <FolderIcon className="mr-2 size-4"/>
+                                                {folder.name}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                            </>
+                        )}
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuItem
+                            onClick={() => handleDelete(password.id)}
+                            className="text-destructive"
+                        >
+                            <TrashIcon className="mr-2 size-4"/>
+                            Удалить
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </CardHeader>
         <CardContent>
             <div className='flex items-center justify-between'>

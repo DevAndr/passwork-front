@@ -140,7 +140,7 @@ export default function PasswordsPage() {
 
     return (
         <div className="space-y-6">
-            <div className='top-2 sticky bg-[#090909] rounded-2xl'>
+            <div className='top-0 sticky bg-[#090909] rounded-xl p-2'>
                 <div className="flex items-center justify-between pb-2">
                     <h1 className="text-2xl font-bold">Пароли {passwords?.length}</h1>
                     <div className="flex items-center gap-2">
