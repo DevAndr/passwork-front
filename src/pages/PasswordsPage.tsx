@@ -1,12 +1,13 @@
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {useSearchParams} from "react-router";
 import {usePasswords} from "@/api/passwords/usePasswords";
 import {useDeletePassword} from "@/api/passwords/useDeletePassword";
 import {useUpdatePassword} from "@/api/passwords/useUpdatePassword";
+import {useImportCsv} from "@/api/passwords/useImportCsv";
 import {useFolders} from "@/api/folders/useFolders";
 import {useQueryClient} from "@tanstack/react-query";
 import {Button} from "@/components/ui/button";
-import {PlusIcon} from "lucide-react";
+import {ImportIcon, PlusIcon} from "lucide-react";
 import {decrypt} from "@/lib/crypto";
 import {useAuthStore} from "@/stores/authStore";
 import PasswordDialog from "@/components/dialogs/PasswordDialog";
@@ -21,6 +22,9 @@ export default function PasswordsPage() {
     const deletePassword = useDeletePassword();
     const updatePassword = useUpdatePassword();
     const queryClient = useQueryClient();
+
+    const importCsv = useImportCsv();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | undefined>();
@@ -92,6 +96,27 @@ export default function PasswordsPage() {
         setDialogOpen(true);
     };
 
+    const handleImportCsv = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        const salt = getEncryptionSalt();
+
+        if (!file || !masterPassword || !salt) return;
+
+        importCsv.mutate({file, masterPassword, salt}, {
+            onSuccess: () => {
+                queryClient.invalidateQueries({queryKey: ["passwords"]});
+                queryClient.invalidateQueries({queryKey: ["folders"]});
+            },
+            onSettled: () => {
+                if (fileInputRef.current) fileInputRef.current.value = "";
+            },
+        });
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -104,10 +129,27 @@ export default function PasswordsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Пароли</h1>
-                <Button onClick={handleCreate}>
-                    <PlusIcon className="mr-2 size-4"/>
-                    Добавить
-                </Button>
+                <div className="flex items-center gap-2">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    <Button
+                        variant="outline"
+                        onClick={handleImportCsv}
+                        disabled={importCsv.isPending}
+                    >
+                        <ImportIcon className="mr-2 size-4"/>
+                        {importCsv.isPending ? "Импорт..." : "Импорт CSV"}
+                    </Button>
+                    <Button onClick={handleCreate}>
+                        <PlusIcon className="mr-2 size-4"/>
+                        Добавить
+                    </Button>
+                </div>
             </div>
 
             {!passwords?.length ? (

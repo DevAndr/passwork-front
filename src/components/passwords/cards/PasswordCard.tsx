@@ -10,7 +10,16 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {CopyIcon, EyeIcon, EyeOffIcon, FolderIcon, FolderOutputIcon, MoreVerticalIcon, PencilIcon, TrashIcon} from "lucide-react";
+import {
+    CopyIcon,
+    EyeIcon,
+    EyeOffIcon,
+    FolderIcon,
+    FolderOutputIcon,
+    MoreVerticalIcon,
+    PencilIcon,
+    TrashIcon
+} from "lucide-react";
 import type {PasswordItem} from "@/api/passwords/types.ts";
 import type {DragEvent, FC} from "react";
 import {PasswordVisibilityToggle} from "@/components/passwords/cards/PasswordVisibilityToggle.tsx";
@@ -49,6 +58,8 @@ export const PasswordCard: FC<Props> = ({
         e.dataTransfer.setData("application/x-password-id", password.id);
         e.dataTransfer.effectAllowed = "move";
     };
+
+    console.log(password)
 
     return <Card key={password.id} draggable onDragStart={onDragStart} className="cursor-grab active:cursor-grabbing">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -91,7 +102,7 @@ export const PasswordCard: FC<Props> = ({
                     </DropdownMenuItem>
                     {folders && folders.length > 0 && (
                         <>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator/>
                             <DropdownMenuSub>
                                 <DropdownMenuSubTrigger>
                                     <FolderOutputIcon className="mr-2 size-4"/>
@@ -105,7 +116,7 @@ export const PasswordCard: FC<Props> = ({
                                         <FolderIcon className="mr-2 size-4"/>
                                         Без папки
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator/>
                                     {folders.map((folder) => (
                                         <DropdownMenuItem
                                             key={folder.id}
@@ -120,7 +131,7 @@ export const PasswordCard: FC<Props> = ({
                             </DropdownMenuSub>
                         </>
                     )}
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator/>
                     <DropdownMenuItem
                         onClick={() => handleDelete(password.id)}
                         className="text-destructive"
@@ -132,30 +143,37 @@ export const PasswordCard: FC<Props> = ({
             </DropdownMenu>
         </CardHeader>
         <CardContent>
-            <div className="flex items-center gap-2 text-sm">
-                {password.username && (
-                    <span className="text-muted-foreground">
+            <div className='flex items-center justify-between'>
+                <div className="flex items-center gap-2 text-sm">
+                    {password.username && (
+                        <span className="text-muted-foreground">
                                             {password.username}
                                         </span>
-                )}
-                <PasswordVisibilityToggle isVisible={isVisiblePassword} decryptedPassword={decryptedPassword}/>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 cursor-pointer"
-                    onClick={() =>
-                        handleReveal(
-                            password.id,
-                            password.encryptedPassword,
-                        )
-                    }
-                >
-                    {isVisiblePassword ? (
-                        <EyeOffIcon className="size-3.5"/>
-                    ) : (
-                        <EyeIcon className="size-3.5"/>
                     )}
-                </Button>
+                    <PasswordVisibilityToggle isVisible={isVisiblePassword} decryptedPassword={decryptedPassword}/>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 cursor-pointer"
+                        onClick={() =>
+                            handleReveal(
+                                password.id,
+                                password.encryptedPassword,
+                            )
+                        }
+                    >
+                        {isVisiblePassword ? (
+                            <EyeOffIcon className="size-3.5"/>
+                        ) : (
+                            <EyeIcon className="size-3.5"/>
+                        )}
+                    </Button>
+                </div>
+                {password?.folder &&
+                    <div className='flex items-center gap-2'>
+                        {password?.folder?.name}
+                        <FolderIcon className="size-3"/>
+                    </div>}
             </div>
         </CardContent>
     </Card>

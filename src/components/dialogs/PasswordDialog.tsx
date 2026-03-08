@@ -104,9 +104,6 @@ export default function PasswordDialog({
         e.preventDefault();
 
         const salt = getEncryptionSalt();
-
-        console.log('test', {masterPassword, salt})
-
         if (!masterPassword || !salt) return;
 
         const encryptedPassword = await encrypt(password, masterPassword, salt);
@@ -123,8 +120,6 @@ export default function PasswordDialog({
             folderId: folderId || undefined,
             tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
         };
-
-        console.log('test', {payload})
 
         const onSuccess = () => {
             queryClient.invalidateQueries({queryKey: ["passwords"]});

@@ -1,26 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import axiosInstance from "../axios/axiosInstance.ts";
+import type {FolderItem} from "@/api/folders/types.ts";
 
-type FolderItem = {
-    id: string;
-    name: string;
-    parentId?: string;
-    children: FolderItem[];
-    _count: {
-        passwords: number
-    };
-    createdAt: string;
-    updatedAt: string;
-};
+type Response = FolderItem[]
 
 const fetchFolders = async () => {
-    const resp = await axiosInstance.get<FolderItem[]>("/folders");
+    const resp = await axiosInstance.get<Response>("/folders");
     return resp.data;
 };
 
 export const useFolders = () => {
-    return useQuery<FolderItem[], AxiosError>({
+    return useQuery<Response, AxiosError>({
         queryKey: ["folders"],
         queryFn: fetchFolders,
     });
