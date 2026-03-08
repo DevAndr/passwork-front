@@ -1,32 +1,20 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router";
-import { usePasswords } from "@/api/passwords/usePasswords";
-import { useDeletePassword } from "@/api/passwords/useDeletePassword";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { CopyIcon, EyeIcon, EyeOffIcon, MoreVerticalIcon, PlusIcon, TrashIcon, PencilIcon } from "lucide-react";
-import { decrypt } from "@/lib/crypto";
-import { useAuthStore } from "@/stores/authStore";
+import {useState} from "react";
+import {useSearchParams} from "react-router";
+import {usePasswords} from "@/api/passwords/usePasswords";
+import {useDeletePassword} from "@/api/passwords/useDeletePassword";
+import {useQueryClient} from "@tanstack/react-query";
+import {Button} from "@/components/ui/button";
+import {PlusIcon} from "lucide-react";
+import {decrypt} from "@/lib/crypto";
+import {useAuthStore} from "@/stores/authStore";
 import PasswordDialog from "@/components/dialogs/PasswordDialog";
-import { Spinner } from "@/components/ui/spinner";
+import {Spinner} from "@/components/ui/spinner";
+import {PasswordCard} from "@/components/passwords/cards/PasswordCard.tsx";
 
 export default function PasswordsPage() {
     const [searchParams] = useSearchParams();
     const folderId = searchParams.get("folderId") ?? undefined;
-    const { data: passwords, isLoading } = usePasswords({ folderId });
+    const {data: passwords, isLoading} = usePasswords({folderId});
     const deletePassword = useDeletePassword();
     const queryClient = useQueryClient();
 
@@ -72,8 +60,8 @@ export default function PasswordsPage() {
     const handleDelete = (id: string) => {
         deletePassword.mutate(id, {
             onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: ["passwords"] });
-                queryClient.invalidateQueries({ queryKey: ["folders"] });
+                queryClient.invalidateQueries({queryKey: ["passwords"]});
+                queryClient.invalidateQueries({queryKey: ["folders"]});
             },
         });
     };
@@ -91,7 +79,7 @@ export default function PasswordsPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
-                <Spinner />
+                <Spinner/>
             </div>
         );
     }
@@ -101,7 +89,7 @@ export default function PasswordsPage() {
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Пароли</h1>
                 <Button onClick={handleCreate}>
-                    <PlusIcon className="mr-2 size-4" />
+                    <PlusIcon className="mr-2 size-4"/>
                     Добавить
                 </Button>
             </div>
@@ -119,88 +107,17 @@ export default function PasswordsPage() {
                 </div>
             ) : (
                 <div className="grid gap-3">
-                    {passwords.map((pw) => (
-                        <Card key={pw.id}>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <div>
-                                    <CardTitle className="text-base">
-                                        {pw.title}
-                                    </CardTitle>
-                                    {pw.url && (
-                                        <CardDescription className="text-xs">
-                                            {pw.url}
-                                        </CardDescription>
-                                    )}
-                                </div>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="size-8"
-                                        >
-                                            <MoreVerticalIcon className="size-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className='w-[180]'>
-                                        <DropdownMenuItem
-                                            onClick={() => handleEdit(pw.id)}
-                                        >
-                                            <PencilIcon className="mr-2 size-4" />
-                                            Редактировать
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() =>
-                                                handleCopy(
-                                                    pw.encryptedPassword,
-                                                )
-                                            }
-                                        >
-                                            <CopyIcon className="mr-2 size-4" />
-                                            Копировать пароль
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => handleDelete(pw.id)}
-                                            className="text-destructive"
-                                        >
-                                            <TrashIcon className="mr-2 size-4" />
-                                            Удалить
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center gap-2 text-sm">
-                                    {pw.username && (
-                                        <span className="text-muted-foreground">
-                                            {pw.username}
-                                        </span>
-                                    )}
-                                    <span className="font-mono">
-                                        {revealedId === pw.id
-                                            ? decryptedPassword
-                                            : "••••••••"}
-                                    </span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-6"
-                                        onClick={() =>
-                                            handleReveal(
-                                                pw.id,
-                                                pw.encryptedPassword,
-                                            )
-                                        }
-                                    >
-                                        {revealedId === pw.id ? (
-                                            <EyeOffIcon className="size-3.5" />
-                                        ) : (
-                                            <EyeIcon className="size-3.5" />
-                                        )}
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
+                    {passwords.map((password) => (
+                        <PasswordCard
+                            key={password.id}
+                            revealedId={revealedId}
+                            decryptedPassword={decryptedPassword}
+                            password={password}
+                            handleEdit={handleEdit}
+                            handleDelete={handleDelete}
+                            handleCopy={handleCopy}
+                            handleReveal={handleReveal}
+                        />
                     ))}
                 </div>
             )}

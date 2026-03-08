@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGeneratePassword } from "@/api/generator/useGeneratePassword";
 import { CheckIcon, CopyIcon, RefreshCwIcon } from "lucide-react";
+import { generatePassword } from "@/lib/generatePassword";
 
 export default function GeneratorPage() {
     const [length, setLength] = useState(16);
@@ -13,12 +13,17 @@ export default function GeneratorPage() {
     const [lowercase, setLowercase] = useState(true);
     const [numbers, setNumbers] = useState(true);
     const [symbols, setSymbols] = useState(true);
+    const [password, setPassword] = useState("");
     const [copied, setCopied] = useState(false);
 
-    const { data: password, refetch } = useGeneratePassword(
-        { length, uppercase, lowercase, numbers, symbols },
-        true,
-    );
+    const generate = useCallback(() => {
+        setPassword(generatePassword({ length, uppercase, lowercase, numbers, symbols }));
+        setCopied(false);
+    }, [length, uppercase, lowercase, numbers, symbols]);
+
+    useEffect(() => {
+        generate();
+    }, [generate]);
 
     const handleCopy = async () => {
         if (!password) return;
@@ -26,6 +31,8 @@ export default function GeneratorPage() {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
+
+    const strength = getStrength(length, [uppercase, lowercase, numbers, symbols].filter(Boolean).length);
 
     return (
         <div className="mx-auto max-w-lg space-y-6">
@@ -37,10 +44,10 @@ export default function GeneratorPage() {
                         Сгенерированный пароль
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                     <div className="flex items-center gap-2">
-                        <div className="flex-1 rounded-md bg-muted px-4 py-3 font-mono text-lg break-all">
-                            {password ?? "..."}
+                        <div className="flex-1 rounded-md bg-muted px-4 py-3 font-mono text-lg break-all select-all">
+                            {password}
                         </div>
                         <div className="flex flex-col gap-1">
                             <Button
@@ -57,10 +64,22 @@ export default function GeneratorPage() {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => refetch()}
+                                onClick={generate}
                             >
                                 <RefreshCwIcon className="size-4" />
                             </Button>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Надёжность</span>
+                            <span className={strengthColor(strength)}>{strengthLabel(strength)}</span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                            <div
+                                className={`h-full transition-all ${strengthBarColor(strength)}`}
+                                style={{ width: `${(strength / 4) * 100}%` }}
+                            />
                         </div>
                     </div>
                 </CardContent>
@@ -130,4 +149,32 @@ export default function GeneratorPage() {
             </Card>
         </div>
     );
+}
+
+function getStrength(length: number, poolCount: number): number {
+    if (length >= 20 && poolCount >= 3) return 4;
+    if (length >= 12 && poolCount >= 3) return 3;
+    if (length >= 8 && poolCount >= 2) return 2;
+    return 1;
+}
+
+function strengthLabel(s: number): string {
+    if (s >= 4) return "Отличный";
+    if (s >= 3) return "Хороший";
+    if (s >= 2) return "Средний";
+    return "Слабый";
+}
+
+function strengthColor(s: number): string {
+    if (s >= 4) return "text-green-600";
+    if (s >= 3) return "text-blue-600";
+    if (s >= 2) return "text-yellow-600";
+    return "text-red-600";
+}
+
+function strengthBarColor(s: number): string {
+    if (s >= 4) return "bg-green-600";
+    if (s >= 3) return "bg-blue-600";
+    if (s >= 2) return "bg-yellow-600";
+    return "bg-red-600";
 }
