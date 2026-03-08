@@ -3,32 +3,45 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {CopyIcon, EyeIcon, EyeOffIcon, MoreVerticalIcon, PencilIcon, TrashIcon} from "lucide-react";
+import {CopyIcon, EyeIcon, EyeOffIcon, FolderIcon, FolderOutputIcon, MoreVerticalIcon, PencilIcon, TrashIcon} from "lucide-react";
 import type {PasswordItem} from "@/api/passwords/types.ts";
 import {type FC} from "react";
 import {PasswordVisibilityToggle} from "@/components/passwords/cards/PasswordVisibilityToggle.tsx";
+
+type FolderOption = {
+    id: string;
+    name: string;
+};
 
 interface Props {
     revealedId: string | null
     decryptedPassword: string
     password: PasswordItem
+    folders?: FolderOption[]
     handleEdit: (id: string) => void
     handleDelete: (id: string) => void
     handleCopy: (encryptedPassword: string) => void
     handleReveal: (id: string, encryptedPassword: string) => void
+    handleMove: (id: string, folderId: string | null) => void
 }
 
 export const PasswordCard: FC<Props> = ({
                                             revealedId,
                                             decryptedPassword,
                                             password,
+                                            folders,
                                             handleEdit,
                                             handleDelete,
                                             handleCopy,
-                                            handleReveal
+                                            handleReveal,
+                                            handleMove,
                                         }) => {
     const isVisiblePassword = revealedId === password.id;
 
@@ -71,6 +84,38 @@ export const PasswordCard: FC<Props> = ({
                         <CopyIcon className="mr-2 size-4"/>
                         Копировать пароль
                     </DropdownMenuItem>
+                    {folders && folders.length > 0 && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>
+                                    <FolderOutputIcon className="mr-2 size-4"/>
+                                    Переместить
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent>
+                                    <DropdownMenuItem
+                                        onClick={() => handleMove(password.id, null)}
+                                        disabled={!password.folderId}
+                                    >
+                                        <FolderIcon className="mr-2 size-4"/>
+                                        Без папки
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {folders.map((folder) => (
+                                        <DropdownMenuItem
+                                            key={folder.id}
+                                            onClick={() => handleMove(password.id, folder.id)}
+                                            disabled={password.folderId === folder.id}
+                                        >
+                                            <FolderIcon className="mr-2 size-4"/>
+                                            {folder.name}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                        </>
+                    )}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                         onClick={() => handleDelete(password.id)}
                         className="text-destructive"

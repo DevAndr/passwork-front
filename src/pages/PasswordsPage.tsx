@@ -2,6 +2,8 @@ import {useState} from "react";
 import {useSearchParams} from "react-router";
 import {usePasswords} from "@/api/passwords/usePasswords";
 import {useDeletePassword} from "@/api/passwords/useDeletePassword";
+import {useUpdatePassword} from "@/api/passwords/useUpdatePassword";
+import {useFolders} from "@/api/folders/useFolders";
 import {useQueryClient} from "@tanstack/react-query";
 import {Button} from "@/components/ui/button";
 import {PlusIcon} from "lucide-react";
@@ -15,7 +17,9 @@ export default function PasswordsPage() {
     const [searchParams] = useSearchParams();
     const folderId = searchParams.get("folderId") ?? undefined;
     const {data: passwords, isLoading} = usePasswords({folderId});
+    const {data: folders} = useFolders();
     const deletePassword = useDeletePassword();
+    const updatePassword = useUpdatePassword();
     const queryClient = useQueryClient();
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -66,6 +70,18 @@ export default function PasswordsPage() {
         });
     };
 
+    const handleMove = (id: string, newFolderId: string | null) => {
+        updatePassword.mutate(
+            {id, folderId: newFolderId ?? undefined},
+            {
+                onSuccess: () => {
+                    queryClient.invalidateQueries({queryKey: ["passwords"]});
+                    queryClient.invalidateQueries({queryKey: ["folders"]});
+                },
+            },
+        );
+    };
+
     const handleEdit = (id: string) => {
         setEditingId(id);
         setDialogOpen(true);
@@ -113,10 +129,12 @@ export default function PasswordsPage() {
                             revealedId={revealedId}
                             decryptedPassword={decryptedPassword}
                             password={password}
+                            folders={folders}
                             handleEdit={handleEdit}
                             handleDelete={handleDelete}
                             handleCopy={handleCopy}
                             handleReveal={handleReveal}
+                            handleMove={handleMove}
                         />
                     ))}
                 </div>
